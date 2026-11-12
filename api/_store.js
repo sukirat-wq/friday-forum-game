@@ -1,8 +1,17 @@
 // Storage: Supabase (free plan, no card). Tables are created by supabase.sql.
 // Needs two Vercel environment variables: SUPABASE_URL and SUPABASE_SECRET_KEY.
 // Without them it falls back to memory, which is for local testing only and does NOT work on Vercel.
-const BASE = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/\/+$/, "");
-const KEY = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+// Also accepts the names Vercel's Supabase integration adds, including any custom prefix (e.g. STORAGE_SUPABASE_URL).
+function env(...suffixes) {
+  for (const s of suffixes) if (process.env[s]) return process.env[s];
+  for (const s of suffixes) {
+    const k = Object.keys(process.env).find((name) => name.endsWith("_" + s) && process.env[name]);
+    if (k) return process.env[k];
+  }
+  return "";
+}
+const BASE = env("SUPABASE_URL").replace(/\/+$/, "");
+const KEY = env("SUPABASE_SECRET_KEY", "SUPABASE_SERVICE_ROLE_KEY");
 const kind = BASE && KEY ? "supabase" : "memory";
 
 async function rest(method, path, body, prefer) {

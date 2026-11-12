@@ -9,6 +9,8 @@ Both are free and need no card.
    - the **Project URL**, like `https://abcdxyz.supabase.co`
    - the **secret** key (`sb_secret_...`). On older projects it's called **service_role**. Do not use the publishable/anon key.
 
+**Shortcut:** if you connected Supabase from Vercel (**Storage → Supabase**), Vercel already added the URL and key for you. Just open the database in Supabase (Storage → your database → **Open in Supabase**) and do step 1.2 (run `supabase.sql`). In step 2, you only need `HOST_PIN`.
+
 ## 2. Add the environment variables (Vercel)
 In the Vercel project: **Settings → Environment Variables**, add these three for all environments:
 
