@@ -1,0 +1,7 @@
+{
+  "name": "paanch-clue",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Civis Friday Forum guessing game",
+  "engines": { "node": ">=18" }
+}

@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Paanch Clue · Civis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Encode+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: Civis brand, light. A blue round band on top, white clue cards with sand number tabs, a quiet right rail for host controls. Single brand theme by choice. */
+:root{
+  --blue:#074FA5; --blue-deep:#053B7C; --sky:#EAF8FF; --sand:#DCC69D; --sand-soft:#F4ECDD;
+  --ink:#4B4B4B; --ink-strong:#262A30; --muted:#6F7782; --line:#D5E3EE; --white:#FFFFFF;
+  --amber:#FFB103; --lime:#CEE85D; --red:#AA3737; --pink:#FFC2D3;
+  --head:"Oswald","Arial Narrow",Impact,sans-serif;
+  --body:"Encode Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{min-height:100%}
+body{background:var(--white);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+h1,h2,h3{font-family:var(--head);font-weight:500;text-wrap:balance;margin:0;color:var(--ink-strong)}
+.wrap{max-width:1280px;margin:0 auto;padding-block:14px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* top bar */
+.bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-bottom:12px;margin-bottom:18px;border-bottom:1px solid var(--line)}
+.logo{font-family:var(--head);font-weight:600;font-size:28px;color:var(--blue);letter-spacing:.01em;line-height:1}
+.title{font-family:var(--head);font-size:18px;color:var(--ink-strong);display:flex;align-items:center;gap:8px}
+.title .five{background:var(--amber);color:var(--ink-strong);border-radius:4px;padding:0 7px;font-weight:600}
+.divider{width:1px;height:24px;background:var(--line)}
+.spacer{flex:1}
+.pill{font-size:12px;font-weight:500;padding:4px 10px;border-radius:999px;background:var(--sky);color:var(--blue-deep);display:inline-flex;align-items:center;gap:6px}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.pill.live .dot{background:#3C9A3C}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{background:var(--white);border:0;padding:6px 12px;font-size:13px;font-weight:500;color:var(--muted)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--blue);color:var(--white)}
+
+/* stage (shared by host, screen and player) */
+.band{background:var(--blue);color:var(--white);border-radius:10px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.band .k{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#BFD8F5}
+.band h2{color:var(--white);font-size:clamp(26px,3.6vw,40px);line-height:1.1}
+.stake{text-align:right}
+.stake b{display:block;font-family:var(--head);font-weight:600;font-size:clamp(40px,5vw,60px);line-height:1;color:var(--amber);font-variant-numeric:tabular-nums}
+.stake span{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#BFD8F5}
+.clues{display:grid;gap:10px;margin-top:14px}
+.clue{display:grid;grid-template-columns:76px minmax(0,1fr);border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--white);min-height:64px}
+.clue .num{background:var(--sand-soft);border-right:1px solid var(--sand);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink)}
+.clue .num b{font-family:var(--head);font-size:28px;font-weight:600;line-height:1;color:var(--ink-strong)}
+.clue .txt{padding:12px 18px;align-self:center;font-size:clamp(17px,1.9vw,22px);font-weight:500;color:var(--ink-strong);line-height:1.35}
+.clue.latest{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue) inset}
+.clue.latest .num{background:var(--blue);border-color:var(--blue);color:#BFD8F5}
+.clue.latest .num b{color:var(--white)}
+.clue.sealed{background:var(--sky);border-style:dashed}
+.clue.sealed .num{background:transparent;border-right:1px dashed var(--line);color:var(--muted)}
+.clue.sealed .num b{color:var(--muted)}
+.clue.sealed .txt{color:var(--muted);font-size:14px;font-weight:500}
+.clue.fresh{animation:pop .4s ease-out}
+@keyframes pop{from{transform:translateY(6px);opacity:.3}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.clue.fresh{animation:none}}
+.answer{margin-top:14px;border-radius:10px;background:var(--lime);padding:16px 20px;color:var(--ink-strong)}
+.answer .k{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+.answer h2{font-size:clamp(24px,3.2vw,36px);line-height:1.15;margin-top:2px}
+.answer p{margin:6px 0 0}
+.sec{margin-top:18px}
+.sec>.k{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-bottom:8px;display:block}
+.standings{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.standings li{display:grid;grid-template-columns:32px minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:10px 14px;border-radius:8px;background:var(--sky)}
+.standings li.top{background:var(--sand-soft);box-shadow:inset 4px 0 0 var(--amber)}
+.standings li.me{outline:2px solid var(--blue)}
+.standings .pos{font-family:var(--head);font-size:20px;color:var(--muted);font-variant-numeric:tabular-nums}
+.standings .nm{font-weight:600;color:var(--ink-strong);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.standings .gain{font-size:13px;font-weight:700;color:#2F6B12;background:var(--lime);border-radius:999px;padding:1px 8px}
+.standings .tot{font-family:var(--head);font-size:24px;font-weight:600;color:var(--ink-strong);min-width:2.2ch;text-align:right;font-variant-numeric:tabular-nums}
+.big .standings li{padding:12px 18px}
+.big .standings .nm{font-size:19px}
+.prompts{list-style:none;margin:0;padding:0;display:grid;gap:10px;counter-reset:q}
+.prompts li{counter-increment:q;display:grid;grid-template-columns:36px minmax(0,1fr);gap:12px;padding:14px 16px;border-radius:10px;border:1px solid var(--line);font-size:clamp(17px,1.8vw,21px);color:var(--ink-strong);line-height:1.4}
+.prompts li::before{content:counter(q);font-family:var(--head);font-weight:600;font-size:26px;color:var(--blue);line-height:1.1}
+.voice{margin-top:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;border-radius:10px;background:var(--pink)}
+.voice b{font-family:var(--head);font-weight:600;font-size:28px;color:var(--ink-strong)}
+.splash{border-radius:12px;background:var(--sky);padding:28px;display:grid;gap:16px}
+.splash h2{font-size:clamp(34px,5vw,56px);line-height:1.05;color:var(--blue)}
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.steps li{background:var(--white);border-radius:10px;padding:14px;border:1px solid var(--line)}
+.steps b{display:block;font-family:var(--head);font-size:20px;font-weight:500;color:var(--ink-strong)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--white);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-weight:500;color:var(--ink-strong)}
+.empty{color:var(--muted);font-size:14px}
+
+/* host */
+.host{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:24px;align-items:start}
+@media (max-width:980px){.host{grid-template-columns:minmax(0,1fr)}}
+.rail{display:grid;gap:14px}
+.panel{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--white)}
+.panel h3{font-size:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.panel h3 small{font-family:var(--body);font-size:12px;color:var(--muted);font-weight:500}
+.btn{border:1px solid var(--line);background:var(--white);border-radius:8px;padding:10px 14px;font-weight:600;font-size:14px;color:var(--ink-strong)}
+.btn:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:var(--white);font-size:16px;padding:14px}
+.btn.primary:hover:not(:disabled){background:var(--blue-deep);color:var(--white)}
+.btn.block{width:100%}
+.flow{display:grid;gap:8px}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.peek{font-size:13px;padding:8px 10px;border-radius:8px;background:var(--sky);color:var(--muted);min-height:36px}
+.peek.on{background:var(--lime);color:var(--ink-strong)}
+.answers{display:grid;gap:8px;max-height:420px;overflow:auto;padding-right:2px}
+.ans{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:10px;border-radius:8px;background:var(--sky)}
+.ans .ord{font-family:var(--head);font-size:18px;color:var(--muted)}
+.ans .who{font-weight:600;color:var(--ink-strong)}
+.ans .meta{font-size:12px;color:var(--muted);font-weight:500}
+.ans .said{grid-column:2/-1;font-size:16px;color:var(--ink-strong);overflow-wrap:anywhere}
+.ans.won{background:var(--lime)}
+.give{border:0;border-radius:6px;padding:6px 10px;font-weight:700;font-size:13px;background:var(--blue);color:var(--white);white-space:nowrap}
+.give.undo{background:var(--white);color:var(--ink-strong);border:1px solid var(--ink)}
+.adj-list{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.adj-list li{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:6px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line)}
+.adj-list li:last-child{border-bottom:0}
+.adj-list .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;color:var(--ink-strong)}
+.adj-list .tot{font-family:var(--head);font-size:18px;min-width:2.5ch;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-strong)}
+.adj-list button{width:28px;height:28px;border-radius:6px;border:1px solid var(--line);background:var(--white);font-weight:700;padding:0}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.field{flex:1;min-width:0;background:var(--white);border:1px solid #BCD0E0;border-radius:8px;padding:10px 12px;color:var(--ink-strong)}
+.field::placeholder{color:#8C949E}
+.linkish{background:none;border:0;padding:0;color:var(--muted);text-decoration:underline;font-size:13px}
+.warn{color:var(--red);font-size:13px;font-weight:600}
+
+/* screen + player */
+.screen{max-width:1100px;margin:0 auto}
+.player{max-width:620px;margin:0 auto;display:grid;gap:14px}
+.player .clue{min-height:52px;grid-template-columns:58px minmax(0,1fr)}
+.player .clue .num b{font-size:22px}
+.player .clue .txt{font-size:16px;padding:10px 14px}
+.compose{display:grid;gap:8px;padding:14px;border-radius:12px;background:var(--sky);position:sticky;bottom:calc(8px + env(safe-area-inset-bottom,0px));box-shadow:0 6px 20px rgba(7,79,165,.12)}
+.compose .row .field{font-size:17px;padding:13px 14px}
+.compose .btn.primary{padding:13px 20px}
+.tries{font-size:13px;color:var(--muted);font-weight:500}
+.mine{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.mine li{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:6px 10px;background:var(--white);border-radius:6px}
+.mine .st{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
+.mine .st.ok{color:#2F6B12}
+.mine .st.win{color:var(--white);background:#3C7A1A;border-radius:999px;padding:0 8px}
+.note{font-size:13px;color:var(--muted)}
+.diag{font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--muted);font-family:ui-monospace,Menlo,Consolas,monospace}
+details.panel summary{cursor:pointer}
+.mine .st.bad{color:var(--red)}
+.tries.warn{color:var(--red);font-weight:600}
+.adj-list .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#C9D3DC;margin-right:8px;vertical-align:middle}
+.adj-list .dot.on{background:#3C9A3C}
+.player .band{flex-wrap:nowrap;padding:14px 16px}
+.player .band h2{font-size:22px}
+.player .stake b{font-size:38px}
+.player .stake span{font-size:10px}
+body{margin:0}
+.pinbox{max-width:460px}
+.banner{background:var(--pink);color:var(--ink-strong);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-weight:500}
+</style></head><body>
+
+<div class="wrap">
+  <header class="bar">
+    <span class="logo">Civis</span>
+    <span class="divider" aria-hidden="true"></span>
+    <span class="title">Paanch <span class="five">5</span> Clue</span>
+    <span class="spacer"></span>
+    <span class="pill" id="conn"><span class="dot"></span><span id="connTxt">Connecting…</span></span>
+    <div class="seg" id="modeSeg" role="group" aria-label="View" hidden>
+      <button type="button" data-mode="host" aria-pressed="false">Host controls</button>
+      <button type="button" data-mode="screen" aria-pressed="false">Screen</button>
+      <button type="button" data-mode="play" aria-pressed="false">Player</button>
+    </div>
+  </header>
+
+  <div class="banner" id="banner" hidden></div>
+  <!-- HOST PIN -->
+  <main id="pinView" hidden>
+    <div class="splash pinbox">
+      <h2>Host sign-in</h2>
+      <p style="margin:0">Enter the host PIN to run the game. Players don't need this.</p>
+      <form class="row" id="pinForm" autocomplete="off">
+        <input class="field" id="pinIn" inputmode="numeric" maxlength="12" placeholder="Host PIN" aria-label="Host PIN" style="font-size:17px;padding:13px 14px">
+        <button class="btn primary" type="submit">Continue</button>
+      </form>
+      <p class="warn" id="pinErr" hidden></p>
+      <p class="note" style="margin:0"><a href="#" id="toPlayer">I'm a player</a></p>
+    </div>
+  </main>
+  <!-- HOST CONTROLS (keep private) -->
+  <main id="hostView" class="host" hidden>
+    <section id="hostStage" aria-live="polite"></section>
+    <aside class="rail">
+      <div class="panel">
+        <h3>Next step <small id="roundCount"></small></h3>
+        <div class="flow">
+          <button class="btn primary block" id="bMain" type="button">Start round 1</button>
+          <button class="btn block" id="bReveal" type="button">Reveal answer now</button>
+          <div class="peek" id="peek" aria-live="polite"></div>
+          <p class="hint">Share the <b>Screen</b> tab on the call and keep this one to yourself. The → key also moves to the next step.</p>
+          <p class="hint" id="hostStatus"></p>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Answers <small id="aCount"></small></h3>
+        <div class="answers" id="answers"></div>
+        <form class="row" id="manual" style="margin-top:10px" autocomplete="off">
+          <input class="field" id="mNick" placeholder="Name" aria-label="Name of someone answering out loud" style="max-width:120px">
+          <input class="field" id="mGuess" placeholder="Answer said out loud" aria-label="Their answer">
+          <button class="btn" type="submit">Add</button>
+        </form>
+      </div>
+      <div class="panel">
+        <h3>Scores <small id="pCount"></small></h3>
+        <ul class="adj-list" id="adj"></ul>
+      </div>
+      <div class="row" id="resetBox"></div>
+    </aside>
+  </main>
+
+  <!-- SCREEN (share this) -->
+  <main id="screenView" class="screen big" hidden aria-live="polite"></main>
+
+  <!-- PLAYER -->
+  <main id="playView" class="player" hidden>
+    <div id="joinBox" class="splash" hidden>
+      <h2>Join the game</h2>
+      <p style="margin:0">Type your name so the host knows who answered.</p>
+      <form class="row" id="joinForm" autocomplete="off">
+        <input class="field" id="nickIn" maxlength="24" placeholder="Your name" aria-label="Your name" required style="font-size:17px;padding:13px 14px">
+        <button class="btn primary" type="submit">Join</button>
+      </form>
+    </div>
+    <div id="playBox" hidden>
+      <div id="playStage"></div>
+      <form class="compose" id="ansForm" autocomplete="off" style="margin-top:14px">
+        <div class="row">
+          <input class="field" id="ansIn" maxlength="140" placeholder="Type your answer" aria-label="Your answer">
+          <button class="btn primary" id="sendBtn" type="submit">Send</button>
+        </div>
+        <span class="tries" id="tries"></span>
+        <ul class="mine" id="mine"></ul>
+      </form>
+      <p class="note diag" id="pDiag" style="margin-top:12px"></p>
+      <p class="note" style="margin-top:4px">Playing as <b id="pNick"></b> · <button type="button" class="linkish" id="renameBtn">change name</button></p>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+"use strict";
+var TRIES = 2, API = "/api/game";
+var DECK = [];
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
+function lsGet(k){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):null; }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+function ptsAt(h){ return Math.max(1,6-h); }
+function cleanNick(n){ return String(n||"").replace(/\s+/g," ").trim().slice(0,24); }
+var actx=null;
+function beep(f,d){ try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)(); var o=actx.createOscillator(),g=actx.createGain(); o.type="triangle"; o.frequency.value=f; g.gain.setValueAtTime(.07,actx.currentTime); g.gain.exponentialRampToValueAtTime(.0001,actx.currentTime+d); o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+d);}catch(e){} }
+function setConn(live,txt){ $("conn").classList.toggle("live",!!live); $("connTxt").textContent=txt; }
+function banner(msg){ $("banner").hidden=!msg; $("banner").textContent=msg||""; }
+
+/* ---- server calls ---- */
+function api(a, opts){
+  opts=opts||{};
+  var url=API+"?a="+a+(opts.q||"");
+  var init={method:opts.body?"POST":"GET", cache:"no-store"};
+  if(opts.body){ init.headers={"Content-Type":"application/json"}; init.body=JSON.stringify(opts.body); }
+  return fetch(url,init).then(function(r){ return r.json().catch(function(){return {};}).then(function(j){ if(!r.ok) throw new Error(j.error||("HTTP "+r.status)); return j; }); });
+}
+
+var mode="play", pin=lsGet("paanch-pin")||"";
+/* =============== shared stage renderer =============== */
+function standingsHTML(ps,me){
+  var rows=ps.standings||[];
+  if(!rows.length) return '<p class="empty">Nobody has joined yet.</p>';
+  var showGain = ps.phase==="answer"||ps.phase==="talk";
+  var pos=0, last=null;
+  return '<ol class="standings">'+rows.map(function(r,i){
+    if(r[1]!==last){ pos=i+1; last=r[1]; }
+    return '<li class="'+(pos===1&&r[1]>0?'top ':'')+(r[0]===me?'me':'')+'"><span class="pos">'+pos+'</span><span class="nm">'+esc(r[0])+(r[0]===me?' (you)':'')+'</span>'+
+      '<span>'+(showGain&&r[2]?'<span class="gain">+'+r[2]+'</span>':'')+'</span><span class="tot">'+r[1]+'</span></li>';
+  }).join("")+'</ol>';
+}
+function stageHTML(ps,o){
+  o=o||{};
+  if(!ps) return '<div class="splash"><h2>Waiting for the host</h2><p style="margin:0">The game will appear here as soon as the host opens it.</p></div>';
+  if(ps.phase==="lobby"){
+    var names=(ps.standings||[]).map(function(r){return '<span class="chip">'+esc(r[0])+'</span>';}).join("");
+    return '<div class="splash"><h2>Guess the consultation</h2>'+
+      '<ol class="steps"><li><b>5 clues, one at a time</b>Each clue points to a consultation Civis has worked on. They get easier as they go.</li>'+
+      '<li><b>Type and press Enter</b>Open this link on your phone or laptop and send your answer. You get '+TRIES+' tries a round.</li>'+
+      '<li><b>Earlier is better</b>Right on clue 1 is worth 5 points. Clue 5 is worth 1.</li></ol>'+
+      '<div><span class="k" style="font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--blue)">In the room ('+(ps.standings||[]).length+')</span><div class="chips" style="margin-top:8px">'+(names||'<span class="empty">Waiting for people to join…</span>')+'</div></div></div>';
+  }
+  if(ps.phase==="final"){
+    return '<div class="band"><div><div class="k">Friday Forum</div><h2>Final standings</h2></div></div><div class="sec">'+standingsHTML(ps,o.me)+'</div>';
+  }
+  var inClues=ps.phase==="clues";
+  var h='<div class="band"><div><div class="k">Round '+(ps.r+1)+' of '+ps.total+' · '+esc(ps.ref)+'</div><h2>'+(inClues?'Which consultation is this?':ps.phase==="talk"?'Let\'s talk':'Here\'s the answer')+'</h2></div>'+
+    (inClues?'<div class="stake"><b>'+ptsAt(ps.h)+'</b><span>points right now</span></div>':'')+'</div>';
+  if(inClues){
+    h+='<div class="clues">';
+    for(var i=0;i<5;i++){
+      var open=i<ps.hints.length, latest=inClues&&i===ps.hints.length-1;
+      h+='<div class="clue'+(open?'':' sealed')+(latest?' latest':'')+(latest&&o.fresh?' fresh':'')+'"><div class="num">Clue<b>'+(i+1)+'</b>'+ptsAt(i+1)+' pts</div><div class="txt">'+(open?esc(ps.hints[i]):'Not yet revealed')+'</div></div>';
+    }
+    h+='</div>';
+  }
+  if(ps.answer){
+    var winners=(ps.standings||[]).filter(function(r){return r[2]>0;}).map(function(r){return r[0];});
+    h+='<div class="answer"><div class="k">The answer</div><h2>'+esc(ps.answer)+'</h2><p>'+(winners.length?'Got it: <b>'+winners.map(esc).join(", ")+'</b>':'Nobody got this one.')+'</p></div>';
+  }
+  if(ps.phase==="answer"){
+    h+='<div class="sec"><span class="k">Standings after round '+(ps.r+1)+'</span>'+standingsHTML(ps,o.me)+'</div>';
+  }
+  if(ps.phase==="talk"){
+    h+='<div class="sec"><span class="k">Let\'s talk about it</span><ol class="prompts">'+ps.talk.map(function(t){return '<li>'+esc(t)+'</li>';}).join("")+'</ol>'+
+      (ps.voice?'<div class="voice"><span>First voice:</span><b>'+esc(ps.voice)+'</b></div>':'')+'</div>';
+  }
+  return h;
+}
+
+
+/* =============== HOST =============== */
+var KEY="paanch-host-web-v1";
+function freshState(){ return {ep:Date.now().toString(36)+Math.random().toString(36).slice(2,5), at:0, r:-1, h:0, phase:"lobby", answers:[], scores:{}, roundPts:{}, players:{}, voice:null, seen:{}}; }
+var S=lsGet(KEY); if(!S||!S.ep){ S=freshState(); lsSet(KEY,S); }
+var freshClue=false, lastPostOk=0, postErr=null, lastPullOk=0, pullErr=null, storeKind="";
+function load(){ var s=lsGet(KEY); if(s&&s.ep&&(s.at||0)>=(S.at||0)) S=s; }
+function commit(reset){ S.at=Math.max(Date.now(),(S.at||0)+1); lsSet(KEY,S); renderAdmin(); postState(reset); }
+function key(){ return S.ep+"-"+S.r; }
+function cur(){ return DECK[S.r]; }
+function allPlayers(){ var set={}; Object.keys(S.players).forEach(function(n){set[n]=1;}); Object.keys(S.scores).forEach(function(n){set[n]=1;}); return Object.keys(set); }
+function standings(){
+  return allPlayers().map(function(n){ return [n, S.scores[n]||0, S.roundPts[n]||0]; })
+    .sort(function(a,b){ return b[1]-a[1] || b[2]-a[2] || a[0].localeCompare(b[0]); });
+}
+function publicState(){
+  var c=cur();
+  return {ep:S.ep, at:S.at, k:key(), r:S.r, total:DECK.length, ref:c?c.ref:"", h:S.h, phase:S.phase,
+    hints: c ? c.hints.slice(0, S.phase==="clues"?S.h:5) : [],
+    answer: (S.phase==="answer"||S.phase==="talk")&&c ? c.answer : null,
+    talk: S.phase==="talk"&&c ? c.talk : null, voice:S.voice,
+    standings: standings(), awarded:S.roundPts};
+}
+function someoneRight(){ return Object.keys(S.roundPts).some(function(n){return S.roundPts[n]>0;}); }
+var posting=false, postAgain=false;
+function postState(reset){
+  if(posting){ postAgain=true; return; }
+  posting=true;
+  api("state",{body:{pin:pin, state:publicState(), reset:!!reset}}).then(function(){ postErr=null; lastPostOk=Date.now(); },function(e){ postErr=e.message; })
+    .then(function(){ posting=false; renderStatus(); if(postAgain){ postAgain=false; postState(); } });
+}
+function renderStatus(){
+  if(mode==="play") return;
+  var bad=postErr||pullErr;
+  setConn(!bad, bad?"Connection problem":"Live");
+  var t=[];
+  if(postErr) t.push("Couldn't update players: "+postErr+". Retrying.");
+  if(pullErr) t.push("Couldn't fetch answers: "+pullErr+". Retrying.");
+  if(storeKind==="memory") t.push("Warning: no database connected, so answers will go missing. Connect Upstash Redis in Vercel (see setup steps).");
+  if(!t.length && lastPullOk) t.push("Live · answers checked "+Math.max(0,Math.round((Date.now()-lastPullOk)/1000))+"s ago");
+  $("hostStatus").textContent=t.join(" ");
+  $("hostStatus").classList.toggle("warn", !!bad || storeKind==="memory");
+}
+
+function renderAdmin(){
+  if(mode==="screen"){ $("screenView").innerHTML=stageHTML(publicState(),{fresh:freshClue}); freshClue=false; return; }
+  if(mode!=="host") return;
+  var ps=publicState();
+  $("hostStage").innerHTML=stageHTML(ps,{fresh:freshClue});
+  freshClue=false;
+  $("roundCount").textContent = S.phase==="lobby" ? DECK.length+" rounds" : S.phase==="final" ? "Done" : "Round "+(S.r+1)+" of "+DECK.length;
+  var m=$("bMain"), last=S.r+1>=DECK.length, right=someoneRight();
+  m.disabled=false;
+  if(S.phase==="lobby") m.textContent="Start round 1";
+  else if(S.phase==="clues") m.textContent = (S.h<5&&!right) ? "Show clue "+(S.h+1)+" ("+ptsAt(S.h+1)+" pts)" : "Reveal answer";
+  else if(S.phase==="answer") m.textContent="Start discussion";
+  else if(S.phase==="talk") m.textContent = last ? "Show final standings" : "Next round";
+  else { m.textContent="Game over"; m.disabled=true; }
+  $("bReveal").hidden = !(S.phase==="clues" && S.h<5);
+  $("bReveal").textContent = right ? "Show clue "+(S.h+1)+" instead" : "Reveal answer now";
+  var c=cur();
+  $("peek").innerHTML = (c&&S.phase!=="final") ? 'Answer: <b>'+esc(c.answer)+'</b><br><span style="font-size:12px">Also accept: '+esc(c.accept.join(", "))+'</span>' : 'The answer for each round shows here, just for you.';
+  $("peek").classList.toggle("on", !!(c&&S.phase!=="final"));
+  var list=S.answers;
+  $("aCount").textContent = S.phase==="clues"||S.phase==="answer"||S.phase==="talk" ? list.length+" this round" : "";
+  $("answers").innerHTML = list.length ? list.map(function(a,i){
+    var p=ptsAt(a.h);
+    return '<div class="ans'+(a.pts?' won':'')+'"><span class="ord">'+(i+1)+'</span><span><span class="who">'+esc(a.nick)+'</span> <span class="meta">· clue '+a.h+' · '+new Date(a.t).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"})+'</span></span>'+
+      (a.pts?'<button type="button" class="give undo" data-undo="'+a.id+'">Undo +'+a.pts+'</button>':'<button type="button" class="give" data-give="'+a.id+'">Give '+p+' pts</button>')+
+      '<span class="said">'+esc(a.g||"(empty)")+'</span></div>';
+  }).join("") : '<p class="empty">'+(S.phase==="clues"?'Answers appear here, fastest first.':'No answers yet.')+'</p>';
+  var st=standings();
+  $("pCount").textContent = st.length ? st.length+" joined" : "";
+  $("adj").innerHTML = st.length ? st.map(function(r){
+    return '<li><span class="nm">'+esc(r[0])+'</span><button type="button" data-adj="-1" data-nick="'+esc(r[0])+'" aria-label="Take a point from '+esc(r[0])+'">−</button><span class="tot">'+r[1]+'</span><button type="button" data-adj="1" data-nick="'+esc(r[0])+'" aria-label="Give a point to '+esc(r[0])+'">+</button></li>';
+  }).join("") : '<li class="empty" style="display:block;border:0">Players appear here as soon as they type their name.</li>';
+  renderStatus();
+}
+
+function nextStep(){
+  load();
+  if(S.phase==="lobby") return startRound(0);
+  if(S.phase==="clues"){ if(S.h<5&&!someoneRight()){ S.h++; freshClue=true; commit(); } else revealAnswer(); return; }
+  if(S.phase==="answer"){ S.phase="talk"; S.voice=pickVoice(); return commit(); }
+  if(S.phase==="talk"){ if(S.r+1<DECK.length) startRound(S.r+1); else { S.phase="final"; commit(); } }
+}
+function startRound(i){ S.r=i; S.h=1; freshClue=true; S.phase="clues"; S.answers=[]; S.roundPts={}; S.voice=null; commit(); pull(); }
+function revealAnswer(){ S.phase="answer"; beep(660,.15); setTimeout(function(){beep(880,.2);},140); commit(); }
+function pickVoice(){
+  var winners=Object.keys(S.roundPts).filter(function(n){return S.roundPts[n]>0;});
+  var pool=winners.length?winners:allPlayers();
+  return pool.length? pool[Math.floor(Math.random()*pool.length)] : null;
+}
+function addAnswer(nick,g,n,h,t){
+  nick=cleanNick(nick); if(!nick||S.phase!=="clues") return false;
+  if(n && S.answers.filter(function(a){return a.nick===nick && a.n;}).length>=TRIES) return false;
+  var clue=Math.min(S.h, Math.max(1, Number(h)||S.h));
+  S.players[nick]=1;
+  S.answers.push({id:Math.random().toString(36).slice(2,9), nick:nick, g:String(g||"").slice(0,140), h:clue, t:t||Date.now(), n:n||0, pts:0});
+  return true;
+}
+function give(id,undo){
+  load();
+  var a=S.answers.find(function(x){return x.id===id;}); if(!a) return;
+  if(undo){ S.scores[a.nick]=(S.scores[a.nick]||0)-a.pts; S.roundPts[a.nick]=(S.roundPts[a.nick]||0)-a.pts; a.pts=0; }
+  else if(!a.pts){ var p=ptsAt(a.h); a.pts=p; S.scores[a.nick]=(S.scores[a.nick]||0)+p; S.roundPts[a.nick]=(S.roundPts[a.nick]||0)+p; beep(880,.12); }
+  commit();
+}
+$("bMain").onclick=nextStep;
+$("bReveal").onclick=function(){ load(); if(someoneRight()&&S.h<5){ S.h++; freshClue=true; commit(); } else revealAnswer(); };
+$("answers").addEventListener("click",function(e){ var b=e.target.closest("button"); if(!b) return; if(b.dataset.give) give(b.dataset.give,false); if(b.dataset.undo) give(b.dataset.undo,true); });
+$("adj").addEventListener("click",function(e){ var b=e.target.closest("button[data-adj]"); if(!b) return; load(); var n=b.dataset.nick, d=Number(b.dataset.adj); S.scores[n]=(S.scores[n]||0)+d; if(S.phase!=="lobby"&&S.phase!=="final") S.roundPts[n]=(S.roundPts[n]||0)+d; commit(); });
+$("manual").addEventListener("submit",function(e){ e.preventDefault(); load(); if(S.phase!=="clues"){ $("mGuess").placeholder="Answers open once a round starts"; return; } if(addAnswer($("mNick").value,$("mGuess").value,0,S.h)){ $("mGuess").value=""; beep(520,.08); commit(); } });
+function wireReset(){
+  $("resetBox").innerHTML='<button type="button" class="linkish" id="bReset">Reset game and scores</button>';
+  $("bReset").onclick=function(){
+    $("resetBox").innerHTML='<span class="warn">Wipe all scores and log every player out?</span><button class="btn" type="button" id="rYes">Yes, reset</button><button class="btn" type="button" id="rNo">Keep playing</button>';
+    $("rYes").onclick=function(){ S=freshState(); wireReset(); commit(true); $("resetBox").insertAdjacentHTML("beforeend",'<span class="hint">Done. Players are sent back to the name screen.</span>'); };
+    $("rNo").onclick=wireReset;
+  };
+}
+wireReset();
+document.addEventListener("keydown",function(e){ if(mode!=="host"||e.target.closest("input,button,textarea")) return; if(e.key==="ArrowRight"){ e.preventDefault(); nextStep(); } });
+
+/* Pull new answers and joined players from the server. Host and Screen tabs both do this. */
+var pulling=false;
+function pull(){
+  if(pulling||mode==="play"||!pin) return;
+  pulling=true;
+  var k=key();
+  api("answers",{q:"&pin="+encodeURIComponent(pin)+"&k="+encodeURIComponent(k)}).then(function(j){
+    pullErr=null; lastPullOk=Date.now(); storeKind=j.store||storeKind;
+    load(); if(key()!==k) return;
+    var changed=false;
+    (j.players||[]).forEach(function(n){ n=cleanNick(n); if(n&&!S.players[n]){ S.players[n]=1; changed=true; } });
+    (j.answers||[]).forEach(function(it){
+      var id=cleanNick(it.nick)+"|"+k+"|"+it.n;
+      if(S.seen[id]) return;
+      S.seen[id]=1; changed=true;
+      if(addAnswer(it.nick,it.g,it.n,it.h,it.t)) beep(520,.08);
+    });
+    if(changed) commit(); else renderStatus();
+  },function(e){ pullErr=e.message; renderStatus(); }).then(function(){ pulling=false; });
+}
+
+/* =============== SCREEN + PLAYER =============== */
+var NICK="paanch-nick-web-v1", P=null, me=cleanNick(lsGet(NICK)||"");
+function receive(ps){
+  if(!ps||typeof ps!=="object"||!ps.ep) { P=null; if(mode==="play") playerRender(false); return; }
+  if(P && (ps.ep!==P.ep ? (ps.at||0) <= (P.at||0) : (ps.at||0) < (P.at||0))) return;
+  var myEp=lsGet("paanch-ep-web-v1");
+  if(myEp && myEp!==ps.ep && me){ me=""; lsSet(NICK,""); }
+  lsSet("paanch-ep-web-v1",ps.ep);
+  var prevH=P&&P.k===ps.k?P.h:-1;
+  P=ps;
+  playerRender(P.h!==prevH);
+}
+function mineKey(){ return "paanch-mine-web:"+me; }
+function myAns(){ var v=lsGet(mineKey()); return v&&P&&v.k===P.k ? v : {k:P?P.k:"",list:[]}; }
+var sendErr=null, sending=false;
+function sendPending(){
+  if(sending||!me||!P) return;
+  var m=myAns(), it=m.list.find(function(x){return !x.saved;});
+  if(!it) return;
+  sending=true;
+  api("answer",{body:{nick:me,k:m.k,n:it.n,g:it.g,h:it.h}}).then(function(){
+    sendErr=null; var m2=myAns(); m2.list.forEach(function(x){ if(x.n===it.n) x.saved=true; }); lsSet(mineKey(),m2);
+  },function(e){ sendErr=e.message; }).then(function(){ sending=false; playerRender(false); sendPending(); });
+}
+function playerRender(fresh){
+  if(mode!=="play") return;
+  $("joinBox").hidden=!!me; $("playBox").hidden=!me;
+  if(!me) return;
+  $("pNick").textContent=me;
+  $("playStage").innerHTML=stageHTML(P,{me:me,fresh:fresh});
+  var mine=myAns().list, won=P&&P.awarded&&P.awarded[me]>0;
+  var open=!!(P&&P.phase==="clues"), left=TRIES-mine.length;
+  var can=open&&left>0&&!won;
+  $("ansForm").hidden=!(P&&P.phase==="clues");
+  $("ansIn").disabled=!can; $("sendBtn").disabled=!can;
+  $("ansIn").placeholder = won ? "You got it!" : !open ? "Answers are closed for this round" : left>0 ? "Type your answer" : "No tries left this round";
+  var t = !P||P.phase!=="clues" ? "" : won ? "Points banked: +"+P.awarded[me] : "Press Enter to send · "+left+" of "+TRIES+" tries left · worth "+ptsAt(P.h)+" pts right now";
+  if(sendErr) t="Couldn't send ("+sendErr+"). Retrying automatically.";
+  $("tries").textContent=t; $("tries").classList.toggle("warn",!!sendErr);
+  $("mine").innerHTML = mine.map(function(it){
+    var st = won && it.n===mine.length ? '<span class="st win">+'+P.awarded[me]+' pts</span>'
+      : it.saved ? '<span class="st ok">Received ✓</span>' : '<span class="st">Sending…</span>';
+    return '<li><span>'+esc(it.g)+'</span>'+st+'</li>';
+  }).join("");
+  $("pDiag").textContent="";
+}
+$("joinForm").addEventListener("submit",function(e){
+  e.preventDefault(); var v=cleanNick($("nickIn").value); if(!v) return;
+  me=v; lsSet(NICK,me); playerRender(true);
+  api("join",{body:{nick:me}}).catch(function(){});
+  setTimeout(function(){ $("ansIn")&&$("ansIn").focus(); },50);
+});
+$("renameBtn").onclick=function(){ me=""; lsSet(NICK,""); $("nickIn").value=""; playerRender(); };
+$("ansForm").addEventListener("submit",function(e){
+  e.preventDefault();
+  var g=$("ansIn").value.trim(); if(!g||$("sendBtn").disabled||!P) return;
+  var m=myAns(); if(m.list.length>=TRIES) return;
+  m.list.push({n:m.list.length+1, g:g.slice(0,140), h:P.h, saved:false});
+  lsSet(mineKey(),m); $("ansIn").value="";
+  playerRender(false); sendPending();
+});
+function pollState(){
+  api("state").then(function(ps){ setConn(true,"Live"); receive(ps); sendPending(); }, function(){ setConn(false,"Reconnecting…"); });
+}
+
+/* =============== MODES + BOOT =============== */
+function show(m){
+  mode=m;
+  ["pinView","hostView","screenView","playView"].forEach(function(id){ $(id).hidden=true; });
+  $("modeSeg").hidden = !(pin && DECK.length);
+  Array.prototype.forEach.call(document.querySelectorAll("#modeSeg button"),function(b){ b.setAttribute("aria-pressed", String(b.dataset.mode===m)); });
+  if(m==="pin"){ $("pinView").hidden=false; return; }
+  if(m==="host"){ $("hostView").hidden=false; load(); renderAdmin(); postState(); pull(); }
+  if(m==="screen"){ $("screenView").hidden=false; load(); renderAdmin(); pull(); }
+  if(m==="play"){ $("playView").hidden=false; playerRender(true); pollState(); }
+}
+function hostLogin(p){
+  return api("deck",{q:"&pin="+encodeURIComponent(p)}).then(function(j){ DECK=j.deck||[]; storeKind=j.store||""; pin=p; lsSet("paanch-pin",p); return true; });
+}
+function route(){
+  var want=(location.hash||"").slice(1);
+  if(want==="host"||want==="screen"){
+    if(pin&&DECK.length) return show(want);
+    if(pin) return hostLogin(pin).then(function(){ show(want); },function(){ pin=""; lsSet("paanch-pin",""); show("pin"); });
+    return show("pin");
+  }
+  show("play");
+}
+$("pinForm").addEventListener("submit",function(e){
+  e.preventDefault(); $("pinErr").hidden=true;
+  hostLogin($("pinIn").value.trim()).then(function(){ if(!/^#(host|screen)$/.test(location.hash)) location.hash="host"; route(); },
+    function(err){ $("pinErr").hidden=false; $("pinErr").textContent=err.message==="Wrong host PIN"?"That PIN isn't right.":"Couldn't reach the server: "+err.message; });
+});
+$("toPlayer").addEventListener("click",function(e){ e.preventDefault(); location.hash=""; show("play"); });
+$("modeSeg").addEventListener("click",function(e){ var b=e.target.closest("button[data-mode]"); if(!b) return; location.hash = b.dataset.mode==="play" ? "play" : b.dataset.mode; });
+window.addEventListener("hashchange",route);
+window.addEventListener("storage",function(e){ if(e.key===KEY&&mode!=="play"){ load(); renderAdmin(); } });
+setInterval(function(){
+  if(mode==="play"){ if(!document.hidden) pollState(); }
+  else if(mode==="host"||mode==="screen"){ pull(); renderStatus(); if(mode==="host"&&Date.now()-lastPostOk>8000) postState(); }
+}, 1500);
+route();
+})();
+</script>
+</body></html>
