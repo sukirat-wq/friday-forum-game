@@ -1,5 +1,5 @@
-// One endpoint for the whole game: /api/game?a=state|join|answer|answers|deck|check
-const { cmd, kind } = require("./_store");
+// One endpoint for the whole game: /api/game?a=state|join|answer|answers|deck
+const store = require("./_store");
 const DECK = require("./_deck");
 const HOST_PIN = process.env.HOST_PIN || "";
 
@@ -14,44 +14,38 @@ module.exports = async (req, res) => {
   const no = (code, msg) => { res.setHeader("Cache-Control", "no-store"); res.status(code).json({ error: msg }); };
   try {
     if (a === "state" && req.method === "GET") {
-      const s = await cmd("GET", "g:state");
-      return ok(s ? JSON.parse(s) : null, "public, s-maxage=1, stale-while-revalidate=1");
+      return ok(await store.getState(), "public, s-maxage=1, stale-while-revalidate=1");
     }
     if (a === "state" && req.method === "POST") {
       if (!isHost) return no(403, "Wrong host PIN");
       if (!body.state || typeof body.state !== "object") return no(400, "No state");
-      await cmd("SET", "g:state", JSON.stringify(body.state));
-      if (body.reset) await cmd("DEL", "g:players");
+      await store.setState(body.state);
+      if (body.reset) await store.resetPlayersAndAnswers();
       return ok({ ok: true });
     }
     if (a === "join" && req.method === "POST") {
       const nick = clean(body.nick, 24);
       if (!nick) return no(400, "Name missing");
-      await cmd("HSET", "g:players", nick, Date.now());
-      await cmd("EXPIRE", "g:players", 86400);
+      await store.touchPlayer(nick);
       return ok({ ok: true });
     }
     if (a === "answer" && req.method === "POST") {
       const nick = clean(body.nick, 24), k = clean(body.k, 40), g = clean(body.g, 140);
       const n = Number(body.n), h = Number(body.h);
       if (!nick || !k || !g || !(n >= 1 && n <= 2)) return no(400, "Incomplete answer");
-      await cmd("RPUSH", "g:ans:" + k, JSON.stringify({ nick, n, g, h: h >= 1 && h <= 5 ? h : null, t: Date.now() }));
-      await cmd("EXPIRE", "g:ans:" + k, 86400);
-      await cmd("HSET", "g:players", nick, Date.now());
+      await store.addAnswer({ k, nick, n, g, h: h >= 1 && h <= 5 ? h : null, t: Date.now() });
+      await store.touchPlayer(nick);
       return ok({ ok: true });
     }
     if (a === "answers" && req.method === "GET") {
       if (!isHost) return no(403, "Wrong host PIN");
-      const list = await cmd("LRANGE", "g:ans:" + clean(q.k, 40), 0, -1);
-      const flat = await cmd("HGETALL", "g:players");
-      const players = [];
-      for (let i = 0; i < (flat || []).length; i += 2) players.push(flat[i]);
-      return ok({ answers: (list || []).map((x) => JSON.parse(x)), players, store: kind });
+      const [answers, players] = await Promise.all([store.listAnswers(clean(q.k, 40)), store.listPlayers()]);
+      return ok({ answers: answers || [], players, store: store.kind });
     }
     if (a === "deck" && req.method === "GET") {
       if (!HOST_PIN) return no(500, "HOST_PIN is not set in Vercel");
       if (!isHost) return no(403, "Wrong host PIN");
-      return ok({ deck: DECK, store: kind });
+      return ok({ deck: DECK, store: store.kind });
     }
     return no(404, "Unknown action");
   } catch (e) {

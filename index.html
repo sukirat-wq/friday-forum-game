@@ -363,7 +363,7 @@ function renderStatus(){
   var t=[];
   if(postErr) t.push("Couldn't update players: "+postErr+". Retrying.");
   if(pullErr) t.push("Couldn't fetch answers: "+pullErr+". Retrying.");
-  if(storeKind==="memory") t.push("Warning: no database connected, so answers will go missing. Connect Upstash Redis in Vercel (see setup steps).");
+  if(storeKind==="memory") t.push("Warning: no database connected, so answers will go missing. Add SUPABASE_URL and SUPABASE_SECRET_KEY in Vercel and redeploy (see SETUP.md).");
   if(!t.length && lastPullOk) t.push("Live · answers checked "+Math.max(0,Math.round((Date.now()-lastPullOk)/1000))+"s ago");
   $("hostStatus").textContent=t.join(" ");
   $("hostStatus").classList.toggle("warn", !!bad || storeKind==="memory");

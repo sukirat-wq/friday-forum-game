@@ -1,31 +1,60 @@
-// Storage: Upstash Redis (added from the Vercel dashboard: Storage → Upstash Redis → connect to project).
-// Falls back to memory for local testing only. Memory does NOT work on Vercel.
-const URL_ = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-const TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-const mem = globalThis.__paanchMem || (globalThis.__paanchMem = new Map());
+// Storage: Supabase (free plan, no card). Tables are created by supabase.sql.
+// Needs two Vercel environment variables: SUPABASE_URL and SUPABASE_SECRET_KEY.
+// Without them it falls back to memory, which is for local testing only and does NOT work on Vercel.
+const BASE = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/\/+$/, "");
+const KEY = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const kind = BASE && KEY ? "supabase" : "memory";
 
-function memCmd([c, k, ...a]) {
-  c = c.toUpperCase();
-  if (c === "GET") return mem.has(k) ? mem.get(k) : null;
-  if (c === "SET") { mem.set(k, a[0]); return "OK"; }
-  if (c === "DEL") { mem.delete(k); return 1; }
-  if (c === "EXPIRE") return 1;
-  if (c === "RPUSH") { const l = mem.get(k) || []; l.push(...a); mem.set(k, l); return l.length; }
-  if (c === "LRANGE") { const l = mem.get(k) || []; return l.slice(Number(a[0]), Number(a[1]) === -1 ? undefined : Number(a[1]) + 1); }
-  if (c === "HSET") { const h = mem.get(k) || {}; h[a[0]] = a[1]; mem.set(k, h); return 1; }
-  if (c === "HGETALL") { const h = mem.get(k) || {}; return Object.entries(h).flat(); }
-  throw new Error("unsupported " + c);
+async function rest(method, path, body, prefer) {
+  const headers = { apikey: KEY, "Content-Type": "application/json" };
+  // Legacy service_role keys are JWTs ("eyJ..."); the newer "sb_secret_..." keys go in apikey only.
+  if (KEY.startsWith("eyJ")) headers.Authorization = "Bearer " + KEY;
+  if (prefer) headers.Prefer = prefer;
+  const r = await fetch(BASE + "/rest/v1/" + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+  const text = await r.text();
+  if (!r.ok) {
+    let msg = text;
+    try { msg = JSON.parse(text).message || text; } catch (e) {}
+    throw new Error("Supabase " + r.status + ": " + String(msg).slice(0, 200));
+  }
+  return text ? JSON.parse(text) : null;
 }
 
-async function cmd(...args) {
-  if (!URL_) return memCmd(args.map(String));
-  const r = await fetch(URL_, {
-    method: "POST",
-    headers: { Authorization: "Bearer " + TOKEN, "Content-Type": "application/json" },
-    body: JSON.stringify(args.map(String)),
-  });
-  const j = await r.json();
-  if (j.error) throw new Error(j.error);
-  return j.result;
-}
-module.exports = { cmd, kind: URL_ ? "upstash" : "memory" };
+// ---- memory fallback (local testing) ----
+const mem = globalThis.__paanchMem || (globalThis.__paanchMem = { state: null, players: {}, answers: [] });
+
+const store = {
+  kind,
+  async getState() {
+    if (kind === "memory") return mem.state;
+    const rows = await rest("GET", "paanch_state?id=eq.1&select=state");
+    return rows && rows[0] ? rows[0].state : null;
+  },
+  async setState(state) {
+    if (kind === "memory") { mem.state = state; return; }
+    await rest("POST", "paanch_state", { id: 1, state }, "resolution=merge-duplicates,return=minimal");
+  },
+  async resetPlayersAndAnswers() {
+    if (kind === "memory") { mem.players = {}; mem.answers = []; return; }
+    await rest("DELETE", "paanch_players?nick=not.is.null", undefined, "return=minimal");
+    await rest("DELETE", "paanch_answers?id=gt.0", undefined, "return=minimal");
+  },
+  async touchPlayer(nick) {
+    if (kind === "memory") { mem.players[nick] = Date.now(); return; }
+    await rest("POST", "paanch_players", { nick, seen_at: Date.now() }, "resolution=merge-duplicates,return=minimal");
+  },
+  async addAnswer(a) {
+    if (kind === "memory") { mem.answers.push(a); return; }
+    await rest("POST", "paanch_answers", a, "return=minimal");
+  },
+  async listAnswers(k) {
+    if (kind === "memory") return mem.answers.filter((a) => a.k === k);
+    return rest("GET", "paanch_answers?k=eq." + encodeURIComponent(k) + "&select=nick,n,g,h,t&order=id.asc");
+  },
+  async listPlayers() {
+    if (kind === "memory") return Object.keys(mem.players);
+    const rows = await rest("GET", "paanch_players?select=nick&order=seen_at.asc");
+    return (rows || []).map((r) => r.nick);
+  },
+};
+module.exports = store;
