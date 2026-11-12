@@ -358,17 +358,19 @@ function party(ps){
 }
 function burst(key, power){
   if(booms[key]) return; booms[key]=1;
-  try{ if(window.matchMedia("(prefers-reduced-motion: reduce)").matches) return; }catch(e){}
+  // Phones with Reduce Motion on get a still version: confetti appears in place and fades, without flying about.
+  var still=false; try{ still=window.matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){}
   var c=document.createElement("canvas"); c.id="confetti"; document.body.appendChild(c);
   var dpr=window.devicePixelRatio||1, W=c.width=innerWidth*dpr, H=c.height=innerHeight*dpr, x=c.getContext("2d");
   var cols=["#074FA5","#FFB103","#CEE85D","#FFC2D3","#DCC69D","#3C9A3C"], parts=[], n=Math.round(140*power);
   for(var i=0;i<n;i++){ var left=i%2===0;
-    parts.push({x:left?0:W, y:H*0.75, vx:(left?1:-1)*(6+Math.random()*10)*dpr, vy:-(12+Math.random()*12)*dpr,
+    parts.push(still ? {x:Math.random()*W, y:Math.random()*H, vx:0, vy:0, s:(6+Math.random()*8)*dpr, r:Math.random()*6, vr:0, c:cols[i%cols.length], round:Math.random()<.3}
+      : {x:left?0:W, y:H*0.75, vx:(left?1:-1)*(6+Math.random()*10)*dpr, vy:-(12+Math.random()*12)*dpr,
       s:(5+Math.random()*7)*dpr, r:Math.random()*6, vr:(Math.random()-.5)*.4, c:cols[i%cols.length], round:Math.random()<.3}); }
   var t0=performance.now();
   (function frame(t){
     var el=t-t0; x.clearRect(0,0,W,H);
-    parts.forEach(function(p){ p.vy+=0.45*dpr; p.vx*=0.985; p.x+=p.vx; p.y+=p.vy; p.r+=p.vr;
+    parts.forEach(function(p){ if(!still){ p.vy+=0.45*dpr; p.vx*=0.985; p.x+=p.vx; p.y+=p.vy; p.r+=p.vr; }
       x.save(); x.globalAlpha=Math.max(0,1-el/3800); x.translate(p.x,p.y); x.rotate(p.r); x.fillStyle=p.c;
       if(p.round){ x.beginPath(); x.arc(0,0,p.s/2,0,7); x.fill(); } else x.fillRect(-p.s/2,-p.s/4,p.s,p.s/2); x.restore(); });
     if(el<3800) requestAnimationFrame(frame); else c.remove();
