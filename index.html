@@ -158,6 +158,29 @@ details.panel summary{cursor:pointer}
 body{margin:0}
 .pinbox{max-width:460px}
 .banner{background:var(--pink);color:var(--ink-strong);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-weight:500}
+.quip{margin:4px 0 0;font-size:15px;color:#DCEBFB;font-style:italic}
+
+/* motion: only plays when the state actually changed (.anim), never on routine refreshes */
+#confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:50}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes bump{0%{transform:scale(.3)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
+@keyframes reveal{0%{opacity:0;transform:scale(.94)}70%{transform:scale(1.02)}100%{opacity:1;transform:none}}
+@keyframes glow{0%,100%{box-shadow:inset 4px 0 0 var(--amber)}50%{box-shadow:inset 4px 0 0 var(--amber),0 0 0 4px rgba(255,177,3,.35)}}
+@keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-12deg)}75%{transform:rotate(12deg)}}
+.anim .standings li{animation:rise .45s ease-out both;animation-delay:calc(var(--i,0) * 70ms)}
+.anim .standings .gain{display:inline-block;animation:bump .6s ease-out both;animation-delay:calc(var(--i,0) * 70ms + .3s)}
+.anim .standings li.top{animation:rise .45s ease-out both,glow 1.6s ease-in-out .5s 2}
+.standings li.top .pos::after{content:" 👑";font-size:16px;display:inline-block}
+.anim .standings li.top .pos::after{animation:wiggle .6s ease-in-out .6s 2}
+.anim .answer{animation:reveal .55s ease-out both}
+.stake.pop b{animation:bump .5s ease-out}
+.anim .chip{animation:rise .35s ease-out both}
+.anim .prompts li{animation:rise .4s ease-out both}
+.anim .prompts li:nth-child(2){animation-delay:.12s}
+.anim .prompts li:nth-child(3){animation-delay:.24s}
+.anim .voice{animation:reveal .5s ease-out .4s both}
+.mine .st.win{display:inline-block;animation:bump .6s ease-out}
+@media (prefers-reduced-motion:reduce){.anim *,.mine .st.win{animation:none!important}}
 </style></head><body>
 
 <div class="wrap">
@@ -282,7 +305,7 @@ function standingsHTML(ps,me){
   var pos=0, last=null;
   return '<ol class="standings">'+rows.map(function(r,i){
     if(r[1]!==last){ pos=i+1; last=r[1]; }
-    return '<li class="'+(pos===1&&r[1]>0?'top ':'')+(r[0]===me?'me':'')+'"><span class="pos">'+pos+'</span><span class="nm">'+esc(r[0])+(r[0]===me?' (you)':'')+'</span>'+
+    return '<li style="--i:'+i+'" class="'+(pos===1&&r[1]>0?'top ':'')+(r[0]===me?'me':'')+'"><span class="pos">'+pos+'</span><span class="nm">'+esc(r[0])+(r[0]===me?' (you)':'')+'</span>'+
       '<span>'+(showGain&&r[2]?'<span class="gain">+'+r[2]+'</span>':'')+'</span><span class="tot">'+r[1]+'</span></li>';
   }).join("")+'</ol>';
 }
@@ -298,11 +321,11 @@ function stageHTML(ps,o){
       '<div><span class="k" style="font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--blue)">In the room ('+(ps.standings||[]).length+')</span><div class="chips" style="margin-top:8px">'+(names||'<span class="empty">Waiting for people to join…</span>')+'</div></div></div>';
   }
   if(ps.phase==="final"){
-    return '<div class="band"><div><div class="k">Friday Forum</div><h2>Final standings</h2></div></div><div class="sec">'+standingsHTML(ps,o.me)+'</div>';
+    return '<div class="band"><div><div class="k">Friday Forum</div><h2>Final standings</h2><p class="quip">Jo jeeta wohi Sikandar.</p></div></div><div class="sec">'+standingsHTML(ps,o.me)+'</div>';
   }
   var inClues=ps.phase==="clues";
   var h='<div class="band"><div><div class="k">Round '+(ps.r+1)+' of '+ps.total+' · '+esc(ps.ref)+'</div><h2>'+(inClues?'Which consultation is this?':ps.phase==="talk"?'Let\'s talk':'Here\'s the answer')+'</h2></div>'+
-    (inClues?'<div class="stake"><b>'+ptsAt(ps.h)+'</b><span>points right now</span></div>':'')+'</div>';
+    (inClues?'<div class="stake'+(o.fresh?' pop':'')+'"><b>'+ptsAt(ps.h)+'</b><span>points right now</span></div>':'')+'</div>';
   if(inClues){
     h+='<div class="clues">';
     for(var i=0;i<5;i++){
@@ -313,7 +336,7 @@ function stageHTML(ps,o){
   }
   if(ps.answer){
     var winners=(ps.standings||[]).filter(function(r){return r[2]>0;}).map(function(r){return r[0];});
-    h+='<div class="answer"><div class="k">The answer</div><h2>'+esc(ps.answer)+'</h2><p>'+(winners.length?'Got it: <b>'+winners.map(esc).join(", ")+'</b>':'Nobody got this one.')+'</p></div>';
+    h+='<div class="answer"><div class="k">The answer</div><h2>'+esc(ps.answer)+'</h2><p>'+(winners.length?'Got it: <b>'+winners.map(esc).join(", ")+'</b>':'Nobody got this one. Koi baat nahi.')+'</p></div>';
   }
   if(ps.phase==="answer"){
     h+='<div class="sec"><span class="k">Standings after round '+(ps.r+1)+'</span>'+standingsHTML(ps,o.me)+'</div>';
@@ -325,6 +348,33 @@ function stageHTML(ps,o){
   return h;
 }
 
+
+/* =============== CONFETTI =============== */
+var booms={};
+function party(ps){
+  if(!ps||!ps.ep) return;
+  if(ps.phase==="final") return burst("final|"+ps.ep, 1.6);
+  if(ps.phase==="answer" && (ps.standings||[]).some(function(r){return r[2]>0;})) burst("ans|"+ps.k, 1);
+}
+function burst(key, power){
+  if(booms[key]) return; booms[key]=1;
+  try{ if(window.matchMedia("(prefers-reduced-motion: reduce)").matches) return; }catch(e){}
+  var c=document.createElement("canvas"); c.id="confetti"; document.body.appendChild(c);
+  var dpr=window.devicePixelRatio||1, W=c.width=innerWidth*dpr, H=c.height=innerHeight*dpr, x=c.getContext("2d");
+  var cols=["#074FA5","#FFB103","#CEE85D","#FFC2D3","#DCC69D","#3C9A3C"], parts=[], n=Math.round(140*power);
+  for(var i=0;i<n;i++){ var left=i%2===0;
+    parts.push({x:left?0:W, y:H*0.75, vx:(left?1:-1)*(6+Math.random()*10)*dpr, vy:-(12+Math.random()*12)*dpr,
+      s:(5+Math.random()*7)*dpr, r:Math.random()*6, vr:(Math.random()-.5)*.4, c:cols[i%cols.length], round:Math.random()<.3}); }
+  var t0=performance.now();
+  (function frame(t){
+    var el=t-t0; x.clearRect(0,0,W,H);
+    parts.forEach(function(p){ p.vy+=0.45*dpr; p.vx*=0.985; p.x+=p.vx; p.y+=p.vy; p.r+=p.vr;
+      x.save(); x.globalAlpha=Math.max(0,1-el/3800); x.translate(p.x,p.y); x.rotate(p.r); x.fillStyle=p.c;
+      if(p.round){ x.beginPath(); x.arc(0,0,p.s/2,0,7); x.fill(); } else x.fillRect(-p.s/2,-p.s/4,p.s,p.s/2); x.restore(); });
+    if(el<3800) requestAnimationFrame(frame); else c.remove();
+  })(t0);
+  beep(784,.12); setTimeout(function(){beep(988,.12);},110); setTimeout(function(){beep(1319,.25);},220);
+}
 
 /* =============== HOST =============== */
 var KEY="paanch-host-web-v1";
@@ -370,11 +420,12 @@ function renderStatus(){
 }
 
 function renderAdmin(){
-  if(mode==="screen"){ $("screenView").innerHTML=stageHTML(publicState(),{fresh:freshClue}); freshClue=false; return; }
+  if(mode==="screen"){ $("screenView").classList.add("anim"); $("screenView").innerHTML=stageHTML(publicState(),{fresh:freshClue}); freshClue=false; party(publicState()); return; }
   if(mode!=="host") return;
   var ps=publicState();
+  $("hostStage").classList.add("anim");
   $("hostStage").innerHTML=stageHTML(ps,{fresh:freshClue});
-  freshClue=false;
+  freshClue=false; party(ps);
   $("roundCount").textContent = S.phase==="lobby" ? DECK.length+" rounds" : S.phase==="final" ? "Done" : "Round "+(S.r+1)+" of "+DECK.length;
   var m=$("bMain"), last=S.r+1>=DECK.length, right=someoneRight();
   m.disabled=false;
@@ -474,13 +525,15 @@ function pull(){
 var NICK="paanch-nick-web-v1", P=null, me=cleanNick(lsGet(NICK)||"");
 function receive(ps){
   if(!ps||typeof ps!=="object"||!ps.ep) { P=null; if(mode==="play") playerRender(false); return; }
-  if(P && (ps.ep!==P.ep ? (ps.at||0) <= (P.at||0) : (ps.at||0) < (P.at||0))) return;
+  if(P && (ps.ep!==P.ep ? (ps.at||0) <= (P.at||0) : (ps.at||0) <= (P.at||0))) return;
   var myEp=lsGet("paanch-ep-web-v1");
   if(myEp && myEp!==ps.ep && me){ me=""; lsSet(NICK,""); }
   lsSet("paanch-ep-web-v1",ps.ep);
   var prevH=P&&P.k===ps.k?P.h:-1;
   P=ps;
-  playerRender(P.h!==prevH);
+  playerRender(P.h!==prevH, true);
+  party(P);
+  if(me && P.awarded && P.awarded[me]>0) burst("win|"+P.k, 0.8);
 }
 function mineKey(){ return "paanch-mine-web:"+me; }
 function myAns(){ var v=lsGet(mineKey()); return v&&P&&v.k===P.k ? v : {k:P?P.k:"",list:[]}; }
@@ -494,8 +547,9 @@ function sendPending(){
     sendErr=null; var m2=myAns(); m2.list.forEach(function(x){ if(x.n===it.n) x.saved=true; }); lsSet(mineKey(),m2);
   },function(e){ sendErr=e.message; }).then(function(){ sending=false; playerRender(false); sendPending(); });
 }
-function playerRender(fresh){
+function playerRender(fresh, changed){
   if(mode!=="play") return;
+  $("playStage").classList.toggle("anim", !!changed);
   $("joinBox").hidden=!!me; $("playBox").hidden=!me;
   if(!me) return;
   $("pNick").textContent=me;

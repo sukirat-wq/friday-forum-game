@@ -1,9 +1,13 @@
 module.exports = [
   {
     "ref": "CIV/2026/R-01",
-    "answer": "Bengaluru Vision Plan",
+    "answer": "BMR (Bengaluru Metropolitan Region) Vision Plan",
     "accept": [
+      "BMR",
+      "Bengaluru Metropolitan Region",
+      "Bangalore Metropolitan Region",
       "Bengaluru",
+      "Bangalore",
       "Vision Plan",
       "Karnataka Udyog Mitra",
       "Bangalore 2050"
@@ -31,10 +35,10 @@ module.exports = [
       "mahaucc"
     ],
     "hints": [
-      "You could answer this one with a voice note.",
-      "It runs in English, Hindi and Marathi, and closes in mid-November 2026.",
-      "To join on WhatsApp you text a seven-letter code to the Civis bot.",
-      "A constitutional law expert recorded an explainer and joined us for a LinkedIn Live.",
+      "The government's own questionnaire asked mostly yes-or-no questions about some very big parts of family life.",
+      "The committee is led by a retired judge who has done this exact job before, for a state in the hills.",
+      "Marriage, divorce, inheritance and adoption, for every faith at once.",
+      "A constitutional law expert joined us for a LinkedIn Live. We're now turning that one hour into five reels. Picture abhi baaki hai.",
       "Article 44 of the Constitution has been waiting for this since 1950."
     ],
     "talk": [
@@ -54,9 +58,9 @@ module.exports = [
     ],
     "hints": [
       "We ran a webinar for this one at very short notice.",
-      "A forum on politics and disability came on board as a partner.",
+      "We partnered with an old friend who also happens to be an expert in this field.",
       "An eye-care organisation offered a written submission after the deadline crept up on us.",
-      "Students on a field visit submitted on both the website and the WhatsApp bot as a live exercise.",
+      "Students on a field visit to Civis submitted on both the website and the WhatsApp chatbot as a live exercise.",
       "The four-letter acronym of the parent Act starts with R and ends with D."
     ],
     "talk": [
@@ -78,7 +82,7 @@ module.exports = [
     "hints": [
       "The group most affected by this draft cannot make a submission themselves.",
       "'Breeding' and 'trading' are both in its title.",
-      "Our partner's webinar poster was all about experimentation.",
+      "Several partners came together to plan a webinar on it. Like a lot of sequel announcements, it never actually released.",
       "Think labs, cages and research institutions.",
       "The parent Act dates from 1960."
     ],
@@ -89,90 +93,49 @@ module.exports = [
     ]
   },
   {
-    "ref": "CIV/2025/R-05",
-    "answer": "Karnataka Domestic Workers (Social Security and Welfare) Act, 2025",
-    "accept": [
-      "domestic workers",
-      "Karnataka domestic",
-      "domestic worker"
-    ],
-    "hints": [
-      "Our final report was addressed all the way up to the Governor.",
-      "The Labour Department of a southern state was on the other end.",
-      "The people it covers mostly work inside other people's homes.",
-      "'Social Security and Welfare' is in its name.",
-      "Cooks, cleaners, nannies and caregivers."
-    ],
-    "talk": [
-      "Many of us employ someone at home. What would change for them if this law worked as intended?",
-      "How do you reach workers who have no time off to fill in a form?",
-      "Should employers be part of these consultations too, or only workers?"
-    ]
-  },
-  {
-    "ref": "CIV/2026/R-06",
-    "answer": "Western Ghats Eco-Sensitive Area draft notification",
-    "accept": [
-      "Western Ghats",
-      "ESA",
-      "eco-sensitive",
-      "Kasturirangan"
-    ],
-    "hints": [
-      "We used this one to launch a new partnership with a legal think tank.",
-      "Environmental consultations are among the hardest for citizens to follow. This one proved it.",
-      "The draft covers land in six states.",
-      "A committee report named after a former ISRO chief sits behind it.",
-      "A UNESCO World Heritage mountain range older than the Himalayas."
-    ],
-    "talk": [
-      "Which matters more to you in a place you love: protection or livelihoods? Can you have both?",
-      "How would you explain an 'eco-sensitive area' to your neighbour in one sentence?",
-      "Have you visited the Ghats? Did anything you saw make it into your thinking here?"
-    ]
-  },
-  {
-    "ref": "CIV/2025/R-07",
-    "answer": "PFRDA consultation (pensions)",
-    "accept": [
-      "PFRDA",
-      "pension",
-      "NPS",
-      "National Pension System"
-    ],
-    "hints": [
-      "A financial regulator, not a ministry, asked the questions.",
-      "We sent out a response analysis on it on Halloween 2025.",
-      "Most people under 30 on the team have never thought about this topic.",
-      "Retirement.",
-      "The regulator's acronym has five letters and ends in 'DA'."
-    ],
-    "talk": [
-      "Hands up if you know where your retirement money is going. What would make it easier to care?",
-      "Do regulators get fewer responses than ministries? Why might that be?",
-      "What would make a 25-year-old answer a pensions consultation?"
-    ]
-  },
-  {
-    "ref": "CIV/2026/R-08",
-    "answer": "Karnataka Excise consultation",
+    "ref": "CIV/2026/R-05",
+    "answer": "Karnataka State Excise Reforms 2026",
     "accept": [
       "excise",
       "Karnataka excise",
       "GoK excise",
-      "liquor"
+      "liquor",
+      "alcohol"
     ],
     "hints": [
-      "The submissions were long, detailed and mostly from experts.",
+      "The draft argues that what this product costs society is bigger than what the state earns from it.",
       "Our analysis report got a round of applause in #good-news.",
       "A southern state wanted to hear from the industry it regulates.",
-      "The department behind it brings in one of the state's largest revenue streams.",
+      "The stronger it is, the steeper the proposed tax.",
       "Think beer, wine and spirits."
     ],
     "talk": [
       "When experts dominate a consultation, how do ordinary citizens get a word in?",
       "Should a revenue-raising department also be the one asking for public feedback?",
       "What made the report on this one land so well with the client?"
+    ]
+  },
+  {
+    "ref": "CIV/2025/R-06",
+    "answer": "Digital Personal Data Protection (DPDP) Act and Rules",
+    "accept": [
+      "DPDP",
+      "data protection",
+      "personal data",
+      "DPDP Rules",
+      "DPDPA"
+    ],
+    "hints": [
+      "For a lot of the 2025 batch, this was their very first Civis assignment, before they had even got the job.",
+      "The government says nearly 7,000 public inputs shaped its final rules.",
+      "The final rules were notified in November 2025, with 18 months for organisations to comply.",
+      "Consent managers, data fiduciaries, and a Board you can complain to.",
+      "The 2023 Act about who gets to use your personal data, and how."
+    ],
+    "talk": [
+      "2025 batch: what do you remember about your recruitment task, and what would you write differently now?",
+      "Would you actually use a consent manager to track who has your data?",
+      "How should Civis itself change the way it handles people's data once the rules fully kick in?"
     ]
   }
 ];
